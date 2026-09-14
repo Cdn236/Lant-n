@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: 21
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -41,25 +41,19 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Build signed Android App Bundle
+      - name: Build Android App Bundle
         working-directory: android
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           chmod +x gradlew
           ./gradlew bundleRelease
 
-      - name: Build signed Android APK
+      - name: Build  Android APK
         working-directory: android
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           chmod +x gradlew
           ./gradlew assembleRelease
 
-      - name: Upload signed APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Lantèn-release-apk
