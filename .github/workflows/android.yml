@@ -41,12 +41,6 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
-        
-      - name: Build Android App Bundle
-        working-directory: android
-        run: |
-          chmod +x gradlew
-          ./gradlew bundleRelease
 
       - name: Build  Android APK
         working-directory: android
@@ -59,9 +53,3 @@ jobs:
         with:
           name: Lantèn-release-apk
           path: android/app/build/outputs/apk/release/*.apk
-
-      - name: Upload signed AAB
-        uses: actions/upload-artifact@v4
-        with:
-          name: Lantèn-release-aab
-          path: android/app/build/outputs/bundle/release/*.aab
