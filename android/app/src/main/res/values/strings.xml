@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Lantèn</string>
+    <string name="title_activity_main">Lantèn</string>
+    <string name="package_name">com.lanten.renting</string>
+    <string name="custom_url_scheme">com.lanten.renting</string>
+</resources>
