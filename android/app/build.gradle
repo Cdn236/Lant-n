@@ -17,15 +17,6 @@ android {
         }
     }
 
-    signingConfigs {
-        release {
-            storeFile file("lanten-release.jks")
-            storePassword System.getenv("KEYSTORE_PASSWORD")
-            keyAlias "lanten"
-            keyPassword System.getenv("KEY_PASSWORD")
-        }
-    }
-
     buildTypes {
         release {
             minifyEnabled false

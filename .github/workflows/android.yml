@@ -41,7 +41,7 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
-
+        
       - name: Build Android App Bundle
         working-directory: android
         run: |
