@@ -17,6 +17,12 @@ android {
         }
     }
 
+    signingConfigs {
+        release {
+            keyAlias "lanten"
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
