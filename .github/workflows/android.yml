@@ -1,10 +1,10 @@
-name: Build Android AAB
+name: Build Android App
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   build:
@@ -14,108 +14,52 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Install dependencies
         run: npm ci
 
       - name: Build web app
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build
 
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Set up production signing key
-        id: keystore
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: |
-          mkdir -p android/app
-
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "Using existing production signing key."
-            echo "$KEYSTORE_BASE64" | base64 --decode > android/app/lanten-release.jks
-            echo "generated=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "No KEYSTORE_BASE64 found."
-            echo "Generating the production signing key for the first build."
-
-            keytool -genkeypair \
-              -v \
-              -keystore android/app/lanten-release.jks \
-              -alias lanten \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -storepass "$KEYSTORE_PASSWORD" \
-              -keypass "$KEY_PASSWORD" \
-              -dname "CN=Lanten, OU=Mobile, O=Lanten, L=Kampala, ST=Central, C=UG"
-
-            echo "generated=true" >> "$GITHUB_OUTPUT"
-          fi
-
-          keytool -list \
-            -keystore android/app/lanten-release.jks \
-            -storepass "$KEYSTORE_PASSWORD"
-
-          cat > android/keystore.properties <<EOF
-          storeFile=app/lanten-release.jks
-          storePassword=$KEYSTORE_PASSWORD
-          keyAlias=lanten
-          keyPassword=$KEY_PASSWORD
-          EOF
-
-      - name: Build signed Android APK and AAB
+      - name: Build Android App Bundle
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew clean assembleRelease bundleRelease
-
-      - name: Upload production signing key
-        if: steps.keystore.outputs.generated == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: Lanten-Production-Signing-Key
-          path: |
-            android/app/lanten-release.jks
-          retention-days: 1
-
-      - name: Create Base64 copy of signing key
-        if: steps.keystore.outputs.generated == 'true'
+          ./gradlew bundleRelease
+      - name: Build Android APK
+        working-directory: android
         run: |
-          base64 -w 0 android/app/lanten-release.jks > lanten-release.jks.base64
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
-      - name: Upload Base64 signing key
-        if: steps.keystore.outputs.generated == 'true'
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Lanten-Production-Signing-Key-Base64
-          path: lanten-release.jks.base64
-          retention-days: 1
+          name: fidez-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Upload signed APK
+      - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: lanten-release-apk
-          path: android/app/build/outputs/apk/release/*.apk
-
-      - name: Upload signed AAB
-        uses: actions/upload-artifact@v4
-        with:
-          name: lanten-release-aab
+          name: fidez-release-aab
           path: android/app/build/outputs/bundle/release/*.aab
