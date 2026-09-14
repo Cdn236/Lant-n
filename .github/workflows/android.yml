@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: '21'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -41,24 +41,38 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Build Android App Bundle
+      - name: Restore production signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/lanten-release.jks
+          ls -lh android/app/lanten-release.jks
+
+      - name: Build signed Android App Bundle
         working-directory: android
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           chmod +x gradlew
           ./gradlew bundleRelease
-      - name: Build Android APK
+
+      - name: Build signed Android APK
         working-directory: android
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease
 
-      - name: Upload APK
+      - name: Upload signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: Lantèn-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: Lantèn-release-apk
+          path: android/app/build/outputs/apk/release/*.apk
 
-      - name: Upload AAB
+      - name: Upload signed AAB
         uses: actions/upload-artifact@v4
         with:
           name: Lantèn-release-aab
